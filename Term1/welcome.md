@@ -28,7 +28,7 @@ The section ends with a brief history of self-driving cars, the "Great Robot Rac
   - This link seems to take me to the Deep Learning Nanodegree forums... 
   - Not sure there are SDC forums... Can't find them right now.
 * The [Slack Channel]()
-* Term1 Curriculum
+* [Term1 Curriculum](https://medium.com/self-driving-cars/term-1-in-depth-on-udacitys-self-driving-car-curriculum-ffcf46af0c08)
 
 
 

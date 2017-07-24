@@ -234,6 +234,7 @@ b = (-x0)*m + y0  (any point (b,m) that satisfies this equation).
 
 
 ### More on the Hough Transform
+* 1972: Duda & Hart: [Use of the Hough transformation to detects lines and curves in pictures](https://scholar.google.com/scholar?hl=en&q=Use+of+the+Hough+Transformation+to+Detect+Lines+and+Curves+in+Pictures&btnG=&as_sdt=1%2C31&as_sdtp=)
 * 2004: van Ginkel et al: [A short introduction to the Radon and Hough transforms and how they relate to each other](http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.2.9419)
 * 2009: Hart: [How the Hough Transform was invented](https://scholar.google.com/scholar?hl=en&q=Hart%2C+P.+E.%2C+%22How+the+Hough+Transform+was+Invented%22&btnG=&as_sdt=1%2C31&as_sdtp=)
 

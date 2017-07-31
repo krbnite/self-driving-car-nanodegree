@@ -180,6 +180,7 @@ We will be using [OpenCV](http://opencv.org/), an open-source computer vision li
 
 ## Canny Edge Detection
 * developed in 1986
+* [Canny Edge Detection](https://en.wikipedia.org/wiki/Canny_edge_detector)
 
 The goal of edge detection is to identify the boundaries of an object in an image.
 One way to do that is to first convert the image to grayscale, compute the gradient of
@@ -238,4 +239,71 @@ b = (-x0)*m + y0  (any point (b,m) that satisfies this equation).
 * 2004: van Ginkel et al: [A short introduction to the Radon and Hough transforms and how they relate to each other](http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.2.9419)
 * 2009: Hart: [How the Hough Transform was invented](https://scholar.google.com/scholar?hl=en&q=Hart%2C+P.+E.%2C+%22How+the+Hough+Transform+was+Invented%22&btnG=&as_sdt=1%2C31&as_sdtp=)
 
+
+
+### Combining Clever Things
+Here we first convert the RGB image to grayscale, which helps focus on the goal of detecting edges. 
+We then use a Gaussian blue to reduce high-frequency noise in the image, and apply Canny edge
+detection on this.  We use a color mask to sharpen the edges of the Canny output and quadrilateral 
+regional mask to ensure we are focused on lane lines. We use a Hough transform to find line segments
+in this region.
+
+```python
+import matplotlib.pyplot as plt
+import matplotlib.image as mpimg
+import numpy as np
+import cv2
+
+
+# Read in and grayscale the image
+image = mpimg.imread('exit-ramp.jpg')
+gray = cv2.cvtColor(image,cv2.COLOR_RGB2GRAY)
+
+# Define a kernel size and apply Gaussian smoothing
+kernel_size = 5
+blur_gray = cv2.GaussianBlur(gray,(kernel_size, kernel_size),0)
+
+# Define our parameters for Canny and apply
+low_threshold = 50
+high_threshold = 150
+edges = cv2.Canny(blur_gray, low_threshold, high_threshold)
+
+# Next we'll create a masked edges image using cv2.fillPoly()
+mask = np.zeros_like(edges)   
+ignore_mask_color = 255   
+
+# This time we are defining a four sided polygon to mask
+imshape = image.shape
+vertices = np.array([[(50,imshape[0]), (400, 300), (imshape[1]-400, 300), (imshape[1],imshape[0])]], dtype=np.int32)
+cv2.fillPoly(mask, vertices, ignore_mask_color)
+masked_edges = cv2.bitwise_and(edges, mask)
+
+# Define the Hough transform parameters
+# Make a blank the same size as our image to draw on
+rho = 1               # distance resolution in pixels of the Hough grid
+theta = np.pi/180     # angular resolution in radians of the Hough grid
+threshold = 5         # minimum number of votes (intersections in Hough grid cell)
+min_line_length = 75  # minimum number of pixels making up a line
+max_line_gap = 5      # maximum gap in pixels between connectable line segments
+line_image = np.copy(image)*0 # creating a blank to draw lines on
+
+# Run Hough on edge detected image
+# Output "lines" is an array containing endpoints of detected line segments
+lines = cv2.HoughLinesP(masked_edges, rho, theta, threshold, np.array([]),
+                            min_line_length, max_line_gap)
+
+# Iterate over the output "lines" and draw lines on a blank image
+for line in lines:
+    for x1,y1,x2,y2 in line:
+        cv2.line(line_image,(x1,y1),(x2,y2),(255,0,0),10)
+
+# Create a "color" binary image to combine with line image
+color_edges = np.dstack((edges, edges, edges)) 
+
+# Draw the lines on the edge image
+lines_edges = cv2.addWeighted(color_edges, 0.8, line_image, 1, 0) 
+plt.imshow(lines_edges)
+```
+![](./lanes15a.png)
+![](./lanes15b.png)
 

@@ -17,7 +17,7 @@ Since such sharp transitions in pixel intensity are preserved in a grayscaled ve
 of these types of image, color can be considered of secondary importance in this task, 
 and may be discarded to simplify the procedure.
 
-![grayscale](./pipeline_images/img1b_gray.png)
+![grayscale](./pipeline_images/img1b_gray.jpg)
 
 ### Blurring
 Blurring the grayscaled image (using OpenCV's `GaussianBlur`) allows us the reduce 
@@ -32,6 +32,9 @@ to image noise and its ability to localize an edge properly.
 A [5x5 kernel](https://en.wikipedia.org/wiki/Canny_edge_detector#Gaussian_filter)
 is considered safe and standard, though not necessarily the right choice for all applications.  
 
+![blur](./pipeline_images/img1c_blur.jpg)
+
+
 ### Edge Detection
 Using OpenCV's `Canny` function, [Canny edge detection](https://en.wikipedia.org/wiki/Canny_edge_detector) 
 is then applied to the blurred image to capture the broadstroke edges of objects in the image. 
@@ -40,6 +43,9 @@ edge (see [documentation](http://docs.opencv.org/2.4/doc/tutorials/imgproc/imgtr
 If a pixel's gradient intensity exceeds the upper threshold, it is accepted as belonging to an edge.
 If the intensity lies below the lower threshold, it is rejected.  Gradient intensities in the middle
 range are accepted only if connected to a pixel exceeding the upper threshold.
+
+![edges](./pipeline_images/img1d_edges.jpg)
+
 
 ### Regional Masking
 At this point, we have an image with white edges sketched over a dark background.  
@@ -51,7 +57,14 @@ the region in our images where the lane lines should appear.
 
 A trapezoid works!
 
+![regional mask](./pipeline_images/img1e_edges_roi.jpg)
+
+
 ### Hough Line Segments
+![hough lines](./pipeline_images/img1f_lines.jpg)
+
+![final image](./pipeline_images/img1g_final.jpg)
+
 
 ## Refining the Pipeline
 For a more robust and refined pipeline, the `draw_lines()` function was modified in 

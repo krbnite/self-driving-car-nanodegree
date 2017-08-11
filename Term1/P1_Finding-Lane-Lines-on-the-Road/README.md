@@ -17,6 +17,8 @@ Since such sharp transitions in pixel intensity are preserved in a grayscaled ve
 of these types of image, color can be considered of secondary importance in this task, 
 and may be discarded to simplify the procedure.
 
+![grayscale](./pipeline_images/img1b_gray.png)
+
 ### Blurring
 Blurring the grayscaled image (using OpenCV's `GaussianBlur`) allows us the reduce 
 high-frequency/noisy aspects in an image.

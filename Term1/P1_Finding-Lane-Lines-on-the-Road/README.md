@@ -74,6 +74,9 @@ the following ways.
 First and foremost, the goal was to overlay long, continuous lines on the lane lines,
 independent of whether the lane lines were dashed or solid.  
 
+![video w/ line segments](./pipeline_images/vid1.png)
+
+
 To do this first required
 identifying which edges within the region of interest most likely lie on the left lane line
 versus those that most likely lie on the right lane line.  This is actually simple:
@@ -85,6 +88,8 @@ One separated into left and right edge groups, by estimating the constituent slo
 intercepts, then taking their averages, we could compute the x coordinates of the 
 bottom and top of the left and right lines by plugging in the vertical limits of our
 trapezoidal region of interest.
+
+
 
 
 ### Angular Masking
@@ -101,6 +106,8 @@ to the right lane line.  Similarly, an edge must be in the neighborhood of $-45^
 to be considered as a candidate edge for the left lane line.  I found $\alpha \pm \sim14^{\circ}$
 worked well.
 
+![video w/ continuos line overlay](./pipeline_images/vid2.png)
+
 
 ### Recent Memory
 Once angular masking was put in place, there existed some frames in the movie files where no edges would be
@@ -115,7 +122,7 @@ be a good estimate for the current frame.  Given this would only be sparingly ne
 
 
 ### Generalizing to Other Image Sizes:  Percentages, not Pixels
-
+![optiona challenge](./pipeline_images/vid3_optional.png)
 
 
 ### 2. Identify potential shortcomings with your current pipeline

@@ -1,33 +1,23 @@
 # **Finding Lane Lines on the Road** 
 ---
 
-**Finding Lane Lines on the Road**
-
 In this project, Python and OpenCV (Open-source Computer Vision) are used to develop an analytical 
 pipeline that can be used to automate lane line detection in image and movie files.  This report
 reflects some lessons learned.
 
-
-[//]: # (Image References)
-
-[image1]: ./examples/grayscale.jpg "Grayscale"
-
----
-
-### Reflection
-
-### 1. Describe your pipeline. As part of the description, explain how you modified the draw_lines() function.
+## Building the vision pipeline
 
 My initial pipeline consisted of gray scaling, Gaussian blurring, Canny edge detection, defining an appropriate
 region of interest (regional mask), detecting line segments in region of interest that met specified constraints.
 
-
+### Grayscaling
 Yellow or white lane lines painted on dark asphault/pavement correspond with sharp 
 transitions in pixel intensity, and thus are amenable to edge detection techniques.
 Since such sharp transitions in pixel intensity are preserved in a grayscaled version 
 of these types of image, color can be considered of secondary importance in this task, 
 and may be discarded to simplify the procedure.
 
+### Blurring
 Blurring the grayscaled image (using OpenCV's `GaussianBlur`) allows us the reduce 
 high-frequency/noisy aspects in an image.
 This is an essential step since image noise can induce spurious edge detections.
@@ -40,6 +30,7 @@ to image noise and its ability to localize an edge properly.
 A [5x5 kernel](https://en.wikipedia.org/wiki/Canny_edge_detector#Gaussian_filter)
 is considered safe and standard, though not necessarily the right choice for all applications.  
 
+### Edge Detection
 Using OpenCV's `Canny` function, [Canny edge detection](https://en.wikipedia.org/wiki/Canny_edge_detector) 
 is then applied to the blurred image to capture the broadstroke edges of objects in the image. 
 Two thresholding parameters can be tuned to restrict which pixels are considered to be a part of an
@@ -48,6 +39,7 @@ If a pixel's gradient intensity exceeds the upper threshold, it is accepted as b
 If the intensity lies below the lower threshold, it is rejected.  Gradient intensities in the middle
 range are accepted only if connected to a pixel exceeding the upper threshold.
 
+### Regional Masking
 At this point, we have an image with white edges sketched over a dark background.  
 The question is: which edges are lane lines?  
 This necessity to contextualize and properly interpret the edges is a major
@@ -57,12 +49,65 @@ the region in our images where the lane lines should appear.
 
 A trapezoid works!
 
-However, more contextualization was needed when applying this pipeline to the diversity of images 
-represented in the movie files.  One fix was to define an angular mask as well.
+### Hough Line Segments
+
+## Refining the Pipeline
+For a more robust and refined pipeline, the `draw_lines()` function was modified in 
+the following ways.
+
+### The Long-Line Overlay
+First and foremost, the goal was to overlay long, continuous lines on the lane lines,
+independent of whether the lane lines were dashed or solid.  
+
+To do this first required
+identifying which edges within the region of interest most likely lie on the left lane line
+versus those that most likely lie on the right lane line.  This is actually simple:
+given the image's (x,y) coordinate system, the edges making up the left lane line should
+have negative angles, while those making up the right lane line should possess positive
+angles.
+
+One separated into left and right edge groups, by estimating the constituent slopes and 
+intercepts, then taking their averages, we could compute the x coordinates of the 
+bottom and top of the left and right lines by plugging in the vertical limits of our
+trapezoidal region of interest.
+
+
+### Angular Masking
+More contextualization was needed when applying this pipeline to the diversity of images 
+represented in the movie files. Otherwise, e.g., any edge identified with a positive slope
+would contribute to the averages computed for the right line, which could really reduce its
+accuracy.
+
+One fix was to define an angular mask as well.  
+
+A quick glance at the images/movies suggests that an edge within the region of interest
+must lie in the angular neighborhood of $45^{\circ}$ to be a line segment corresponding
+to the right lane line.  Similarly, an edge must be in the neighborhood of $-45^{\circ}$
+to be considered as a candidate edge for the left lane line.  I found $\alpha \pm \sim14^{\circ}$
+worked well.
+
+
+### Recent Memory
+Once angular masking was put in place, there existed some frames in the movie files where no edges would be
+identified as lying on a particular line, say the left line.  
+This would give a NaN estimate for the slope and intercept, effectively causing the pipeline to
+fail at detecting a lane line.  
+
+Expanding the angular neighborhood too much
+would forgo the control obtained by using an angular mask, so I sought an alternative approach.
+It occurred to me that the lane line identification in the previous frame would very likely
+be a good estimate for the current frame.  Given this would only be sparingly necessary,
+
+
+### Generalizing to Other Image Sizes:  Percentages, not Pixels
+
 
 
 ### 2. Identify potential shortcomings with your current pipeline
 
+In addition to angular masking, I could have probably used more robust statistics than the simple average.
+For example, the median would likely be much more robust (and possibly obviate the need of angular masking,
+though building in both is more robust, and more psychologically comforting).  
 
 One potential shortcoming would be what would happen when ... 
 

@@ -64,10 +64,8 @@ can be represented by two pieces of information, `rho` and `theta`.
 * `rho` is the shortest distance of the line to origin, (0,0)
 * `theta` is the angle of the line connecting those two points
 
-
-Any single point from an image can be represented 
-by all lines through that point, 
-and a line from an image is represented as a point. To identify if a given 
+One can use this mapping to help detect line segements in an image by simply counting votes
+for each (rho, theta) pair on a Hough grid. 
 
 ![hough lines](./pipeline_images/img1f_lines.jpg)
 

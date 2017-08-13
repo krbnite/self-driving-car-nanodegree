@@ -49,20 +49,29 @@ range are accepted only if connected to a pixel exceeding the upper threshold.
 
 ### Regional Masking
 At this point, we have an image with white edges sketched over a dark background.  
-The question is: which edges are lane lines?  
-This necessity to contextualize and properly interpret the edges is a major
+The question is: which edges are lane lines? This necessity to contextualize and properly interpret the edges is a major
 step from image analysis into computer vision.  However, in our case, no black magic
 (or deep learning) is (yet) necessary: contextualization can be provided by considering
-the region in our images where the lane lines should appear.  
-
-A trapezoid works!
+the region in our images where the lane lines should appear.  Given the camera is mounted on the dashboard, 
+this region should be roughly constant.
 
 ![regional mask](./pipeline_images/img1e_edges_roi.jpg)
 
 
 ### Hough Line Segments
+In Hough space, points represent lines through Euclidean space. Each line in a 2D Euclidean space
+can be represented by two pieces of information, `rho` and `theta`. 
+* `rho` is the shortest distance of the line to origin, (0,0)
+* `theta` is the angle of the line connecting those two points
+
+
+Any single point from an image can be represented 
+by all lines through that point, 
+and a line from an image is represented as a point. To identify if a given 
+
 ![hough lines](./pipeline_images/img1f_lines.jpg)
 
+### The Final Image
 ![final image](./pipeline_images/img1g_final.jpg)
 
 

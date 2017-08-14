@@ -59,10 +59,12 @@ this region should be roughly constant.
 
 
 ### Hough Line Segments
-In Hough space, points represent lines through Euclidean space. Each line in a 2D Euclidean space
-can be represented by two pieces of information, `rho` and `theta`. 
+In a 2D Hough space, points represent lines through a 2D Euclidean space (or a slice of it, like in an image). 
+Each line in a 2D Euclidean space can be represented by two pieces of information, `rho` and `theta`. 
 * `rho` is the shortest distance of the line to origin, (0,0)
 * `theta` is the angle of the line connecting those two points
+
+![hough space](./R_theta_line.gif)
 
 One can use this mapping to help detect line segements in an image by simply counting votes
 for each (rho, theta) pair on a Hough grid. 
@@ -70,42 +72,60 @@ for each (rho, theta) pair on a Hough grid.
 ![hough lines](./pipeline_images/img1f_lines.jpg)
 
 ### The Final Image
-![final image](./pipeline_images/img1g_final.jpg)
-
-
-## Refining the Pipeline
-For a more robust and refined pipeline, the `draw_lines()` function was modified in 
-the following ways.
-
-### The Long-Line Overlay
-First and foremost, the goal was to overlay long, continuous lines on the lane lines,
-independent of whether the lane lines were dashed or solid.  
-
+The final image is an overlay of the Hough line segments onto the original image.  
+In the image below, we see an example of the output of this pipeline when applied to a 
+movie file.  
 ![video w/ line segments](./pipeline_images/vid1.png)
 
+The full video file can be found [here](./test_videos_output/solidWhiteRight.mp4).
 
-To do this first required
-identifying which edges within the region of interest most likely lie on the left lane line
-versus those that most likely lie on the right lane line.  This is actually simple:
-given the image's (x,y) coordinate system, the edges making up the left lane line should
+
+## Refining the Pipeline: the Long-Line Overlay
+The goal here was to overlay long, continuous lines on the lane lines,
+independent of whether the lane lines were dashed or solid.  The `draw_lines()` function 
+was modified in the following ways.
+
+
+
+### Discerning Right from Left
+Replacing the identified line segements in an image with two continous line segments representing
+the left and right lanes first required developing a way to discern whether an edge was more likely
+a piece of the left lane or the right lane.  
+Given the image's (x,y) coordinate system, a useful observation is that the left lane edges should
 have negative angles, while those making up the right lane line should possess positive
 angles.
 
-One separated into left and right edge groups, by estimating the constituent slopes and 
-intercepts, then taking their averages, we could compute the x coordinates of the 
-bottom and top of the left and right lines by plugging in the vertical limits of our
-trapezoidal region of interest.
+### Statistical Representatives
+Once edges are separated into left and right groups, it is possible to estimate the slopes and 
+intercepts that best represent the left and right lanes by taking group average.  
 
+To stabilize the vertical presence of these representative lines throughout a sequence of images,
+we can assert that the represenatives will consistently fill the full vertical extent of the 
+trapezoidal region of interest from which the edges came.  
 
+By plugging in our choice of vertical components and the estimates of slope and intercept, 
+we can  compute the x coordinates of the left and right lines.  
+
+```python
+# Line Bottoms
+left_ybot = shape[1]  
+left_xbot = int((left_ybot - left_b)/ left_m)
+right_ybot = shape[1]
+right_xbot = int( (right_ybot - right_b)/right_m)
+  
+# Line Tops
+right_xtop = int((y_top - right_b) / right_m)
+left_xtop = int((y_top - left_b) / left_m)
+```
 
 
 ### Angular Masking
-More contextualization was needed when applying this pipeline to the diversity of images 
-represented in the movie files. Otherwise, e.g., any edge identified with a positive slope
-would contribute to the averages computed for the right line, which could really reduce its
-accuracy.
-
-One fix was to define an angular mask as well.  
+More contextualization was necessary when applying this pipeline to the diversity of images 
+represented in the movie files, especially in the optional challenge. 
+For example, we do not necessarily want any edge identified with a positive slope
+to contribute to the averages computed for the right line.  We only want the edges
+with positive slope that are actually found along the right line.  Angular masking
+helps us achieve this.
 
 A quick glance at the images/movies suggests that an edge within the region of interest
 must lie in the angular neighborhood of $45^{\circ}$ to be a line segment corresponding
@@ -129,6 +149,10 @@ be a good estimate for the current frame.  Given this would only be sparingly ne
 
 
 ### Generalizing to Other Image Sizes:  Percentages, not Pixels
+The last thing I had to do to fully generalize the pipeline was to cast the coordinates
+of trapezoidal regional mask in terms of their percentages along the full length and 
+width of the image, instead of as pixel values.
+
 ![optiona challenge](./pipeline_images/vid3_optional.png)
 
 

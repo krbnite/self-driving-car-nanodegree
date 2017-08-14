@@ -91,14 +91,31 @@ was modified in the following ways.
 Replacing the identified line segements in an image with two continous line segments representing
 the left and right lanes first required developing a way to discern whether an edge was more likely
 a piece of the left lane or the right lane.  
+
 Given the image's (x,y) coordinate system, a useful observation is that the left lane edges should
 have negative angles, while those making up the right lane line should possess positive
 angles.
+
 
 ### Statistical Representatives
 Once edges are separated into left and right groups, it is possible to estimate the slopes and 
 intercepts that best represent the left and right lanes by taking group average.  
 
+### Angular Masking
+More contextualization was necessary when applying this pipeline to the diversity of images 
+represented in the movie files, especially in the optional challenge. 
+For example, we do not necessarily want any edge identified with a positive slope
+to contribute to the averages computed for the right line.  We only want the edges
+with positive slope that are actually found along the right line.  Angular masking
+helps us achieve this.
+
+A quick glance at the images/movies suggests that an edge within the region of interest
+must lie in the angular neighborhood of $45^{\circ}$ to be a line segment corresponding
+to the right lane line.  Similarly, an edge must be in the neighborhood of $-45^{\circ}$
+to be considered as a candidate edge for the left lane line.  I found $\alpha \pm \sim14^{\circ}$
+worked well.
+
+### Consistent Overlay
 To stabilize the vertical presence of these representative lines throughout a sequence of images,
 we can assert that the represenatives will consistently fill the full vertical extent of the 
 trapezoidal region of interest from which the edges came.  
@@ -119,20 +136,6 @@ left_xtop = int((y_top - left_b) / left_m)
 ```
 
 
-### Angular Masking
-More contextualization was necessary when applying this pipeline to the diversity of images 
-represented in the movie files, especially in the optional challenge. 
-For example, we do not necessarily want any edge identified with a positive slope
-to contribute to the averages computed for the right line.  We only want the edges
-with positive slope that are actually found along the right line.  Angular masking
-helps us achieve this.
-
-A quick glance at the images/movies suggests that an edge within the region of interest
-must lie in the angular neighborhood of $45^{\circ}$ to be a line segment corresponding
-to the right lane line.  Similarly, an edge must be in the neighborhood of $-45^{\circ}$
-to be considered as a candidate edge for the left lane line.  I found $\alpha \pm \sim14^{\circ}$
-worked well.
-
 ![video w/ continuos line overlay](./pipeline_images/vid2.png)
 
 
@@ -145,30 +148,29 @@ fail at detecting a lane line.
 Expanding the angular neighborhood too much
 would forgo the control obtained by using an angular mask, so I sought an alternative approach.
 It occurred to me that the lane line identification in the previous frame would very likely
-be a good estimate for the current frame.  Given this would only be sparingly necessary,
+be a good estimate for the current frame.  This worked quite well.
 
 
-### Generalizing to Other Image Sizes:  Percentages, not Pixels
+### Percentages, not Pixels
 The last thing I had to do to fully generalize the pipeline was to cast the coordinates
 of trapezoidal regional mask in terms of their percentages along the full length and 
-width of the image, instead of as pixel values.
+width of the image, instead of as pixel values.  This allows one to apply the same pipeline
+to images of differing size.
 
 ![optiona challenge](./pipeline_images/vid3_optional.png)
 
 
-### 2. Identify potential shortcomings with your current pipeline
+## Potential Shortcomings and Improvements of the Pipeline
+* Potential Shortcoming: Sensitivity of the simple average.
+  - Possible Improvement: More robust statistics than the simple average could help when computing group estimates. For example, the median or a trimmed mean would likely be much more robust (and possibly obviate the need of angular masking, though building in both is more robust, and more psychologically comforting).  
 
-In addition to angular masking, I could have probably used more robust statistics than the simple average.
-For example, the median would likely be much more robust (and possibly obviate the need of angular masking,
-though building in both is more robust, and more psychologically comforting).  
+* Potential Shortcoming: The memory feature. Though this feature helped, it is certainly something that could be harmful.  For example,
+if for some reason a long sequence of NaNs appeared in the group estimates, the estimates would all
+be replaced with the most recent non-NaN estimate.  If this came from a frame that was recorded even just
+a second ago, the lane line estimates could be innaccurate and possibly lead to undesirably events.
+  - Possible Improvement: Better angular masking intervals would likely help solve this problem.
 
-One potential shortcoming would be what would happen when ... 
+* Potential Shortcoming:  In the winter, snow cover on the roads could really prevent lane line identification with the current pipeline.  Even on a sunny day shortly after a snowstorm when the roads have been salted and plowed, the coloration of a road is whitened by all the salt and lane lines can become hard to distinguish from the asphalt.  
+  - Possible Improvement: Test this procedure on varied weather conditions. Use other markers in the scene to avoid accidents.
 
-Another shortcoming could be ...
 
-
-### 3. Suggest possible improvements to your pipeline
-
-A possible improvement would be to ...
-
-Another potential improvement could be to ...

@@ -84,3 +84,46 @@ is pretty basic math.
  
  
  http://ruder.io/optimizing-gradient-descent/index.html
+
+## Data Prep
+### Feature Standardization / Normalization
+Do you know why it's important to somehow standardize or normalize your inputs to a neural network?
+
+One reason is that activation functions, like sigmoid or tanh, generally squash large numbers.  If all the
+numbers passing through an activation are large, learning will become difficult because they will all look
+the same post-activation unless you carefully plan out the appropriate scale to initialize your
+weights for each new project.  By standardizing the inputs (zero mean and unit deviation), we no longer have to
+worry about this: weights can be initialized similarly each time and the activation functions will not
+serve as learning handicaps.
+
+### MSE vs SSE
+This is another thing that did not occur to me previously: though one might think MSE and SSE are nearly identical as loss
+functions, in practice MSE is the better choice.  Why?
+
+When using a lot of data, the SSE can become arbitrarily large.  In theory, whatever.  In practice, this 
+means you need to very carefully plan out your learning rate, lest the gradient descent diverges due to
+oversized updates.  MSE offers convenience: by putting large and small data sets on the same footing, we 
+are able to apply the the same rule-of-thumb for choosing an initial learning rate -- usually 0.01-0.001.
+
+### Lingo
+A lot of ML lingo in general have synonyms in all the other data fields, like digital signal processing, statistical analysis, etc.
+The same is true for neural network lingo.
+
+Remember, a linear regression model can be thought of as a simple neural network.  In linear regression, you don't often
+hear about doing a forward pass through the network, then a backward pass.  But you hear that all the time when talking about
+NNs.  Well, a doing a forward pass just means "compute the model output." The subsequent backward pass just means "update the model weights."  
+
+### Passing Through the Net: Batch Size
+When you do a full forward/backward pass, you can do it with all the data.   Or, you can do it a single data point at a time.
+Actually, the options do not stop there: you can do a foward/backward pass with any batch size.  
+
+Using a single data point makes it so the updates are overly reliant on a single data point.  Using the entire data
+set can simply take forever if the data set is huge.  Worse, each long-time-to-compute update is just one estimate of
+what the update should actually be.  By choosing to go with a "mini batch" of data (instead of the full batch), 
+you can benefit from quicker update times and many more update estimates.  
+
+If you think about it, this can be made to be like bootstrapping.  Instead of updating updating after each
+mini-batch pass, you can choose the average of the past 5 mini-batch updates or the average of 5 concurrent 
+mini-batch updates.  This type of mechanism allows you to get a more robust estimate of what the update should 
+be at each update step.  (I think this is likely how the momentum mechanism works.)
+

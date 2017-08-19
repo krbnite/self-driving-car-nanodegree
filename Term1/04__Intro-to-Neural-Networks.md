@@ -190,3 +190,22 @@ predictions = tes_out > 0.5
 accuracy = np.mean(predictions == targets_test)
 print("Prediction accuracy: {:.3f}".format(accuracy))
 ```
+
+## Multi-Layer Perceptron Math
+* The input is transferred to the hidden layer: 
+ - x[i]w[i,j] = h[j]  (using Einstein summation convention)
+* note that x and y are row vectors
+* w[i,j]: the matrix w transfers input i to hidden unit j
+ - that is, w[i,j] maps ith component of input vector to jth component of hidden vector
+* note that the above notation suppresses the data point index
+ - i.e., we could more specifically write:  x[i,p]w[i,j] = h[j,p]
+* Get past the hidden layer w/ another transfer matrix
+ - A(h[j])v[j,k] = logit[k]
+ - v[j,k] maps the jth component of the activated hidden vector, A(h[j]), to the kth component of the pre-output (sometimes called logit)
+* All together now:
+ - B(A(x[i]w[i,j])v[j,k]) = y[k]
+ - A and B are activation functions, e.g., A = relu, B = sigmoid
+ - if not suppressing the data point index, it looks like this:
+  * B(A(x[i,p]w[i,j])v[j,k]) = y[k,p]
+
+ 

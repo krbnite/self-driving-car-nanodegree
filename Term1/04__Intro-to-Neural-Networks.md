@@ -194,11 +194,11 @@ print("Prediction accuracy: {:.3f}".format(accuracy))
 ## Multi-Layer Perceptron Math
 * The input is transferred to the hidden layer: 
   - x[i]w[i,j] = h[j]  (using Einstein summation convention)
-* note that x and y are row vectors
-* w[i,j]: the matrix w transfers input i to hidden unit j
+  - note that x and y are row vectors
+  - w[i,j]: the matrix w transfers input i to hidden unit j
   - that is, w[i,j] maps ith component of input vector to jth component of hidden vector
-* note that the above notation suppresses the data point index
-  - i.e., we could more specifically write:  x[i,p]w[i,j] = h[j,p]
+  - note that the above notation suppresses the data point index, i.e., we could more specifically write:  
+    * x[i,p]w[i,j] = h[j,p]
 * Get past the hidden layer w/ another transfer matrix
   - A(h[j])v[j,k] = logit[k]
   - v[j,k] maps the jth component of the activated hidden vector, A(h[j]), to the kth component of the pre-output (sometimes called logit)
@@ -208,4 +208,56 @@ print("Prediction accuracy: {:.3f}".format(accuracy))
   - if not suppressing the data point index, it looks like this:
     * B(A(x[i,p]w[i,j])v[j,k]) = y[k,p]
 
+Technically, a bias/offset term is added to each transfer matrix before an activation is applied.
+Oftentimes, the notation above is employed w/ the bias term implied.  Here is the more explicit
+version of the equation:
+
+y[k] = B(A(x[i]w[i,j]+b[j])v[j,k]+c[k])
+
+The input is linearly transformed and activated, the result of which is then linearly transformed and activated to give the output.
+
+Note that we use row vectors in this course, but in other places people use column vectors.  This will change the look of the equation.
+
+y[k] = B(v[k,j]A(w[j,i]x[i]+b[j])+c[k])   <-- col vec representation
+
+By default, NumPy arrays are row-like, thought you can make 'em col-like:  
+* row = vec
+* col = vec[:,None]
+
+```python
+import numpy as np
+
+def sigmoid(x):
+    """
+    Calculate sigmoid
+    """
+    return 1/(1+np.exp(-x))
+
+# Network size
+N_input = 4
+N_hidden = 3
+N_output = 2
+
+np.random.seed(42)
+# Make some fake data
+X = np.random.randn(4)
+
+weights_input_to_hidden = np.random.normal(0, scale=0.1, size=(N_input, N_hidden))
+weights_hidden_to_output = np.random.normal(0, scale=0.1, size=(N_hidden, N_output))
+
+
+# TODO: Make a forward pass through the network
+
+hidden_layer_in = np.dot(X, weights_input_to_hidden)
+hidden_layer_out = sigmoid(hidden_layer_in)
+
+print('Hidden-layer Output:')
+print(hidden_layer_out)
+
+output_layer_in = np.dot(hidden_layer_out, weights_hidden_to_output)
+output_layer_out = sigmoid(output_layer_in)
+
+print('Output-layer Output:')
+print(output_layer_out)
+```
  

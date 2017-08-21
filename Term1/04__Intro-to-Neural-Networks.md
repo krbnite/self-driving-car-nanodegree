@@ -337,3 +337,7 @@ predictions = out > 0.5
 accuracy = np.mean(predictions == targets_test)
 print("Prediction accuracy: {:.3f}".format(accuracy))
 ```
+
+## More on BackProp
+* [Yes, you should understand backprop](https://medium.com/@karpathy/yes-you-should-understand-backprop-e2f06eab496b)
+* [Karpathy's lecture on backprop](https://www.youtube.com/watch?v=59Hbtz7XgjM)

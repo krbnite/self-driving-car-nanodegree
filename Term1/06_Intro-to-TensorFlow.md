@@ -272,5 +272,210 @@ get to 'em later in the course).
 For now, we'll stick w/ one-hot encoding.
 
 ## Cross Entropy
+I think we already talked about this um-teen times in these notes... Or maybe those were notes for my other courses.
+* cross entropy is not symmetric in its arguments
+* however, cross entropy turns logistic regression into a convex optimization problem
+* cross entropy is the standard when generalizing simple logistic regression to multinomial logistic classification 
+* in the multinomial setting, XE is summed over all possibilities for a single data point
+    - if computing the loss over a mini-batch, one then sums this sum over all data points in the batch
 
+<img src=./images/xe.png width=400>
+<img src=./images/xe-loss.png width=400>
+
+
+### XE in TF
+For a single data point with several possible classifications:
+```python
+import tensorflow as tf
+
+# Pretend we've already done the forward pass on a single data point to 
+#     get softmax_data and are now comparing it to the one-hot-encoded target 
+#     for this data point, one_hot_data
+softmax_data = [0.7, 0.2, 0.1]
+one_hot_data = [1.0, 0.0, 0.0]
+
+# Create TF Tensors for the data
+#   -- this seems redundant when computing for just a single data point,
+#      but the importance of the "bucket nature" of placeholders becomes more 
+#      obvious if/when we compute over many data points that need to pass through
+#      the same graph
+softmax = tf.placeholder(tf.float32)
+one_hot = tf.placeholder(tf.float32)
+
+# Create the XE Tensor in the graph
+xe = -tf.reduce_sum(one_hot * tf.log(softmax))
+
+# Run time: Compute the XE 
+with tf.Session() as sess:
+    output = sess.run(xe, feed_dict={softmax: softmax_data, one_hot: one_hot_data})
+    print(output)
+```
+
+## Feature Normalization & Weight Initialization
+For numerical stability, it is best to work with numbers that are all in the same ballpark, e.g.,
+having features with a scalelength of order 1e-6 mixed with those of order 1e6 is not a great idea.
+To be well-conditioned, the numbers should also cluster around zero (if this is not the case, the problem
+is poorly conditioned).
+
+One common way to try to achieve this is to use features with zero mean and unit variance:
+```
+f_new = (f_old - mean(f_old)) / stdev(f_old)
+```
+
+For RGB images where pixel values range between 0-255:
+```
+pix_new = (pix_old - 128) / 128
+```
+
+Similarly, we want our weights to be initialized in the same [-1,1] ballpark.  One way to do this
+is to draw weights from a normal distribution.  A slightly better way is to draw from a truncated
+normal distribution.  This is because large weight values generally mean that the network has 
+confidence in the associated features, so we do not want randomly high numbers from the normal distro
+to be falsely interpreted by the network.  In the same way, we do not want to use a normal distirubtion
+that has a large deviation --- even unit variance is often too big.  
+
+If you are only working with a handful
+of features, usually `stdDev=0.1` works well.  However, there is an empirical rule of thumb you can use too...
+If I remember correctly it is something like `stdDev = sqrt(2 / num\_features)`.
+
+
+## Measuring Performance
+Great performance on your training set can be meaningless: the classifier could have enough degrees of freedom that
+it was allowed to memorize the training set perfectly.  This is why it is essential to have a validation set, which
+allows you to track whether the network is truly learning features that generalize to the greater population.
+However, as you tweak and upgrade your model based on these observations, you are indirectly encoding the aspects
+of the validation set into your model.  This can run into similar problems as overtraining.  This is why it's
+important to also have a test set: something you rarely pull out to test the model on.  Ideally, the test set
+would only be used on the last version of your model: it will identify whether you over-validated.  
+
+## Data Splits: Training, Validation, Test
+You want to train w/ as much data as possible.  However!  You need enough data in your validation and test
+sets so that the performance estimates are stable.  That is, if you only test on a few data points, it's not
+clear whether the performance estimate is accurate, or if you just happened to test the model on a few data points
+it by chance got right.  Moreover, it's equally unclear whether any tweaks to your model that improve or degrade the estimate 
+truly improved or degraded the performance when the test/validation set is only a few data points.
+
+## Rule of 30
+Hand-wavy rule that states that an improvement/degradation of a performance estimate can be taken seriously if
+it affects at least 30 data samples.  
+
+Example \#1:  if a model has an 80% performance on a 3k-sample validation set, then any new estimate outside the 
+open interval (79%,81%) can be attributed to how you tweaked the model.
+
+Example \#2: on a 30k-sample validation set, estimate changes of 0.1% can be considered significant
+
+CAVEAT:  The heuristic assumes that classes are balanced!  In practice, classes are almost never balanced. However,
+you can treat your data in ways that induces balance (e.g., under/over sampling, SMOTE, etc).
+
+In some treatments, your best bet is just to have more data. LOTS MORE DATA!!! MuhHHhaahaHHa!
+
+If your data set is small in general, you can also use cross-validation.  However, as compute time currently stands,
+CV is a horribly-long process on very large data sets.
+
+## Scaling Gradient Descent
+Don't use a single data point.  Don't use the full data set.  Use a mini-batch: usually between 32-1024 randomly
+selected samples.  
+
+This is stochastic gradient descent.  SGD.  Sometimes a mini-batch will point us in a bad direction, but on 
+average it will point us in the right direction!  
+
+Mini-batching has some inherent pro's that come along for the ride:
+* provides the ability to train a model, even if a computer lacks the memory to store the entire dataset
+
+
+## More Tricks
+Zero mean and small variance is important for SGD.  There are other "tricks" that help as well.
+
+* Momentum:  keep running average of the gradients, and use most recent average to take a step
+    ```
+    M <- 0.9M + gradient
+    ```
+* Learning Rate Decay:  How big should your learning rate be?  Good question w/o a great answer (though it should likely be in the range 0.0001-0.1). One thing that is clear: convergence to a minimum can be achieved faster if the relative size of the LR decreases over time
+    - Note that large LRs are not necessarily better than small LRs; a large LR might seem to learn more quickly at first, but often comes to a plateau that a smaller LR will plow through given some time
+* Adagrad: does momentum and LR decay for you
+* Adam: I personally have found Adam to be the best out-of-the-box SGD enhancer
+
+
+## Mini-Batching in TensorFlow
+1GB of data? Meh, who cares.  10GB of data -- ok, you start getting into a range where using a GPU that can ingest
+the full data set gets expensive.
+
+But who needs an expensive GPU when you can actually just mini-batch your training process on a cheap GPU?
+
+One caveat: when divvying up a data set into equi-sized subsets, there will likely be a "remainder subset" that does not
+fully filly up to size!  e.g., batches of 3 samples from a 11-sample parent set: (1,2,3), (4,5,6), (7,8,9), (10,11)
+
+You can choose to clip that last set, or allow the TF placeholder to take on batches of varying size (by using None as the batch size)
+```python
+# Features and Labels
+features = tf.placeholder(tf.float32, [None, n_input])
+labels = tf.placeholder(tf.float32, [None, n_classes])
+```
+
+EPOCH: a single forward and backward pass of the entire data set
+
+Some Example TF Code
+
+```python
+# Assuming train_features, train_classes, etc, already defined above
+
+# Features and Labels
+features = tf.placeholder(tf.float32, [None, n_input])
+labels = tf.placeholder(tf.float32, [None, n_classes])
+
+# Weights & bias
+weights = tf.Variable(tf.random_normal([n_input, n_classes]))
+bias = tf.Variable(tf.random_normal([n_classes]))
+
+# Logits - xW + b
+logits = tf.add(tf.matmul(features, weights), bias)
+
+# Define loss and optimizer
+learning_rate = tf.placeholder(tf.float32)
+cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=logits, labels=labels))
+optimizer = tf.train.GradientDescentOptimizer(learning_rate=learning_rate).minimize(cost)
+
+# Calculate accuracy
+correct_prediction = tf.equal(tf.argmax(logits, 1), tf.argmax(labels, 1))
+accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+
+init = tf.global_variables_initializer()
+
+batch_size = 128
+epochs = 10
+learn_rate = 0.001
+
+train_batches = batches(batch_size, train_features, train_labels)
+
+with tf.Session() as sess:
+    sess.run(init)
+
+    # Training cycle
+    for epoch_i in range(epochs):
+
+        # Loop over all batches
+        for batch_features, batch_labels in train_batches:
+            train_feed_dict = {
+                features: batch_features,
+                labels: batch_labels,
+                learning_rate: learn_rate}
+            sess.run(optimizer, feed_dict=train_feed_dict)
+
+        # Print cost and validation accuracy of an epoch
+        print_epoch_stats(epoch_i, sess, batch_features, batch_labels)
+
+    # Calculate accuracy for test dataset
+    test_accuracy = sess.run(
+        accuracy,
+        feed_dict={features: test_features, labels: test_labels})
+
+print('Test Accuracy: {}'.format(test_accuracy))
+```
+
+## AWS
+* Remember to shut down and TERMINATE!
+* ssh carnd@ipAddresss
+* password protected (barmd)
+* jupyter notebook
+* ipAddress:8888
 

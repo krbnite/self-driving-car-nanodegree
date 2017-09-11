@@ -232,3 +232,20 @@ the parameter space in terms of what's possible, but we do want to limit it in t
 is probable.  We want the exploration space to be huge so we can find a great model, while doing
 our best to eliminate the possibility of overfitting.
 
+### Dropout
+<img src=./images/dropout.jpg width=400>
+
+Dropout is a regularization technique to reduce overfitting. The technique works by temporarily dropping neurons/nodes from the network, along with all of their associated incoming and outgoing connections. 
+
+In TensorFlow, you can apply dropout like so:
+```python
+keep_prob = tf.placeholder(tf.float32) # probability to keep units
+hidden_layer = tf.add(tf.matmul(features, weights[0]), biases[0])
+hidden_layer = tf.nn.relu(hidden_layer)
+hidden_layer = tf.nn.dropout(hidden_layer, keep_prob)
+logits = tf.add(tf.matmul(hidden_layer, weights[1]), biases[1])
+```
+
+Note that keep\_prob must be treated differently during train and test time.  That is, only apply
+a non-unital keep\_prob during training (e.g., 0.5).  During test time, make sure keep\_prob=1.
+

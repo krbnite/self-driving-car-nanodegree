@@ -68,6 +68,8 @@ is considered as well... In IDL, we had options like edge\_wrap, edge\_trunc, ze
 the current case, the terminology is "valid padding" (patch does not go off image) and "same padding" (patch
 will go off image onto a zero-padded region).
 
+* http://www.matthewzeiler.com/wp-content/uploads/2017/07/eccv2014.pdf
+
 ### Padding
 * Assume input of width W, height H, and depth D.
 * Assume convolutional layer has a filter size of F (i.e., fw=fh=F), depth K, and stride S
@@ -122,3 +124,110 @@ in the first hidden image into a vector of scores.  This vector might now look f
 
 Stopped at (10: Conv Output Shape)
 
+## Padding in TensorFlow
+TF does not exactly adhere to the definition of "SAME" and "VALID" padding given above.
+
+SAME Padding, the output height and width are computed as:
+* out\_height = ceil(float(in_height) / float(strides[1]))
+* out\_width = ceil(float(in_width) / float(strides[2]))
+
+VALID Padding, the output height and width are computed as:
+* out\_height = ceil(float(in_height - filter_height + 1) / float(strides[1]))
+* out\_width = ceil(float(in_width - filter_width + 1) / float(strides[2]))
+
+## Number of Parameters
+Q: How many parameters would a convolutional layer have if it did not use parameter sharing?
+ - (H1xW1xD1 +1)\*(H2xW2xD2), where +1 is for bias
+
+Q: How many parameters does a conv layer have w/ parameter sharing?
+ - (H1xW1xD1 +1)\*20
+ 
+ For example, imagine a 32x32x3 image is mapped to a 14x14x20 hidden image using a 8x8x20 patch.
+ Without parameter sharing, this would amount to (8x8x3 +1)\*(14x14x20) = 193\*3920 = 756,560 parameters.
+ However, by sharing parameters we need only worry about 3860 parameters -- less than 1\% as many parameters!
+ 
+ ## Convolutional Layers in TF
+ ```python
+ # Output depth
+k_output = 64
+
+# Image Properties
+image_width = 10
+image_height = 10
+color_channels = 3
+
+# Convolution filter
+filter_size_width = 5
+filter_size_height = 5
+
+# Input/Image
+input = tf.placeholder(
+    tf.float32,
+    shape=[None, image_height, image_width, color_channels])
+
+# Weight and bias
+weight = tf.Variable(tf.truncated_normal(
+    [filter_size_height, filter_size_width, color_channels, k_output]))
+bias = tf.Variable(tf.zeros(k_output))
+
+# Apply Convolution
+conv_layer = tf.nn.conv2d(input, weight, strides=[1, 2, 2, 1], padding='SAME')
+# Add bias
+conv_layer = tf.nn.bias_add(conv_layer, bias)
+# Apply activation function
+conv_layer = tf.nn.relu(conv_layer)
+```
+
+## Explore the Design Space
+After a convolutional layer, one can further downsample by using pooling techniques, such as
+max pooling or average pooling.  That is, when the hidden image is formed, one can apply a "pooling
+patch" over it that has its own size and stride, and computes a representative for each patch position.
+For example, if we map a 32x32x3 image to a 14x14x20 image using an 8x8x20 patch, we can then use a
+2x2x20 pool with a stride of 2 to churn out a 7x7x20 representation of the hidden image.
+
+<img src=./images/max-pooling.png width=400>
+<img src=./images/lenet.png width=400>
+
+An advantage of pooling is that we can significantly reduce the parameter necessary to learn. 
+However, the tradeoff is with choosing several more hyperparameters (pool size and stride).
+
+```python
+conv_layer = tf.nn.conv2d(input, weight, strides=[1, 2, 2, 1], padding='SAME')
+conv_layer = tf.nn.bias_add(conv_layer, bias)
+conv_layer = tf.nn.relu(conv_layer)
+# Apply Max Pooling
+#  -- ksize and strides take lists like [batch, height, width, channels]
+#  -- most often, batch and channels are set to 1
+conv_layer = tf.nn.max_pool(
+    conv_layer,
+    ksize=[1, 2, 2, 1],
+    strides=[1, 2, 2, 1],
+    padding='SAME')
+```
+
+Max pooling has some regularization properties to it (can help prevent overfitting).  
+Some say it helps introduce a little bit of rotational invariance...
+
+## 1x1 Convolutions
+This is really just a matrix multiply on the channel dimension.  That is, if you remember that
+a pxq-sized patch maps an n-channel image to an m-channel image using (p\*q\*n+1)\*m parameters,
+then a 1x1-sized patch must map an n-channel image to an m-channel image using (n+1)\*m parameters.
+That is, it is a linear transformation of an n-component channel vector into an m-component channel vector.
+
+This is a way to add more nonlinearities to the CNN w/o necessarily adding too many extra parameters.
+
+## Google's Inception Module
+How do you know if you should choose a max pool, or a 1x1, 3x3, or 5x5 convolution?  
+Don't choose: use 'em all!
+
+For example, if you use SAME padding, then you can output feature maps of the same
+width and height using these different convolutional techniques in parallel.  Then just
+stack the outputs on top of each other.  That's what the inception module does.
+If you choose each filtering scheme to have a small amount of channels, one can create
+a very powerful network with relatively few parameters.
+
+* http://nicolovaligi.com/history-inception-deep-learning-architecture.html
+* https://hacktilldawn.com/2016/09/25/inception-modules-explained-and-implemented/
+
+
+...left off at slide 30...

@@ -242,8 +242,10 @@ Some notes:
   - out\_width  = ceil(float(in\_width - filter\_width + 1) / float(strides[2]))
 * Weight Shape for tf.nn.conv2d is [patch\_height, patch\_width, old\_depth, new\_depth]
 * Bias Shape for the conv layer is [new\_depth]
-* The ksize and strides input tensors for tf.nn.conv2d and tf.nn.max\_pool correspond to dims [batch, height, width, depth]
+* The strides input tensors for tf.nn.conv2d and tf.nn.max\_pool correspond to dims [batch, height, width, depth]
  - usually batch=depth=1 for both
+* The filter input tensor for tf.nn.conv2d is the weights tensor defined above
+* The ksize input for tf.nn.max\_pool has dims likes the strides input, [batch, height, width, depth]
 
 ```python
 from tensorflow.examples.tutorials.mnist import input_data

@@ -370,7 +370,7 @@ with tf.Session() as sess:
 ```
 
 ## LeNet in TensorFlow
-<img src=./images/lenet-architecture>
+<img src=./images/lenet-architecture.png>
 
 This is a Lab, the details and results of which can be found in [08\_\_Lab\_\_LeNet-in-TensorFlow](./08__Lab__Lenet-in-TensorFlow).
 
